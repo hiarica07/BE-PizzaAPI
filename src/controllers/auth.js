@@ -1,4 +1,6 @@
 "use strict"
+const passwordEncrypt = require("../helpers/passwordEncrypt")
+const Token = require("../models/token")
 /* -------------------------------------------------------
     | FULLSTACK TEAM | NODEJS / EXPRESS |
 ------------------------------------------------------- */
@@ -22,6 +24,36 @@ module.exports = {
             }
         */
 
+        const {userName,email,password} = req.body 
+
+        if(!((userName || email) && password)) {
+
+            res.errorStatusCode = 401
+            throw new Error("Username/Email and Password required")
+        }
+
+        const user = await User.findOne({$or:[{userName},{email}]})
+
+        if (user?.password !== passwordEncrypt(password)) {
+            res.errorStatusCode = 401
+            throw new Error("Username/Email and Password invalid")
+        }
+
+        if (!user?.isActive) {
+            res.errorStatusCode = 401
+            throw new Error("User is not active")
+        }
+
+        let tokenData = Token.findOne({userId: user._id})
+
+        if (!tokenData) {
+            tokenData = await Token.create({
+                userId: user._id,
+                token: passwordEncrypt(user._id + Date.now())
+            })
+        }
+
+ 
         res.status(200).send({
             message: "Login Successfull"
         })
