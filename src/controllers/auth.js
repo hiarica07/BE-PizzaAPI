@@ -6,6 +6,7 @@ const Token = require("../models/token")
 ------------------------------------------------------- */
 
 const User = require("../models/user")
+const jwt = require("jsonwebtoken")
 
 module.exports = {
     login: async (req, res) => {
@@ -52,14 +53,44 @@ module.exports = {
                 token: passwordEncrypt(user._id + Date.now())
             })
         }
+/*********************************************************************************** */
+/*********************************************************************************** */
+/*********************************************************************************** */
+            /*  JWT  */
+        const accessData = {
+            _id: user._id,
+            userName: user.userName,
+            email:user.email,
+            isActive:user.isActive,
+            isAdmin:user.isAdmin
+        }
+
+        // Conver to JWT
+        // jwt.sign(payload,key,{expireIn:3m})
+
+        const accessToken = jwt.sign(accessData,process.env.ACCESS_KEY, {expiresIn:"30m"})
+
+        //RefreshToken:
+
+        const refreshData = {
+            _id:user._id,
+            password: user.password
+        }
+
+        // Convert to JWT
+
+        const refreshToken = jwt.sign(refreshData,process.env.REFRESH_KEY,{expiresIn:"1d"})
 
  
-        res.status(200).send({
-            error:false,
-            message: "Login Successfull",
+         res.send({
+            error: false,
             token: tokenData.token,
+            bearer: {
+                access: accessToken,
+                refresh: refreshToken
+            },
             user
-        })
+        });
     },
     logout: async (req, res) => {
 
