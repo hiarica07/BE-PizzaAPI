@@ -55,7 +55,10 @@ module.exports = {
 
  
         res.status(200).send({
-            message: "Login Successfull"
+            error:false,
+            message: "Login Successfull",
+            token: tokenData.token,
+            user
         })
     },
     logout: async (req, res) => {
@@ -66,8 +69,16 @@ module.exports = {
             #swagger.description = 'Delete token key.'
         */
 
+        const auth = req.headers?.auhtorization
+
+        const tokenKey = auth ? auth.split(" ") : null
+
+        const result = await Token.deleteOne({token: tokenKey[1]})
+
         res.status(200).send({
-            message: "Login Successfull"
+            error:false,
+            message: "Logout Successfull, token deleted.",
+            result
         })
     },
 }
