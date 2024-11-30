@@ -43,7 +43,7 @@ module.exports = {
 
         const result = await User.create(req.body);
 
-        res.status(200).send({
+        res.status(201).send({
             error: false,
             result
         })
@@ -73,7 +73,7 @@ module.exports = {
 
         const result = await User.updateOne({ _id: req.params.id }, req.body, { runValidators: true })
 
-        res.status(200).send({
+        res.status(202).send({
             error: false,
             result
         })
