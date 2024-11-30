@@ -4,12 +4,21 @@
 ------------------------------------------------------- */
 // passwordEncrypt(password:string):
 
-const crypto = require('node:crypto'),
-    keyCode = process.env.SECRET_KEY,
-    loopCount = 10_000,
-    charCount = 32,
-    encType = 'sha512';
+const { 
+    crypto, 
+    SECRET_KEY: keyCode, 
+    LOOP_COUNT: loopCount, 
+    CHAR_COUNT: charCount, 
+    ENC_TYPE: encType 
+} = {
+    crypto: require('node:crypto'),
+    ...process.env
+};
 
-module.exports = function (password) {
-    return crypto.pbkdf2Sync(password, keyCode, loopCount, charCount, encType).toString('hex')
+const loopCountNum = Number(loopCount);
+const charCountNum = Number(charCount);
+
+
+module.exports = (password) => {
+    return crypto.pbkdf2Sync(password, keyCode, loopCountNum, charCountNum, encType).toString('hex')
 }
