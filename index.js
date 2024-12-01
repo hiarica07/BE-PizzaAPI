@@ -48,9 +48,11 @@ app.use(require('./src/middlewares/queryHandler'))
 /* ------------------------------------------------------- */
 // Routes:
 
-// routes/index.js:
-// app.use('/', require('./src/routes/index'))
-app.use('/', require('./src/routes/'))
+//* ------------------------------------------------------- */
+// Routes:
+
+// routes/index.js: // Dosyanın adı index olduğu için tanımış oluyor
+app.use('/', require('./src/routes'))
 
 // HomePath:
 app.all('/', (req, res) => {
@@ -62,9 +64,12 @@ app.all('/', (req, res) => {
             redoc: "/documents/redoc",
             json: "/documents/json",
         },
-        user: req.user,
+        // user: req.user, // browser'da anayolda görünmemesi için kapadık
     })
 })
+
+
+/* ------------------------------------------------------- */
 
 /* ------------------------------------------------------- */
 

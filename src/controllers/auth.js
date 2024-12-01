@@ -93,23 +93,86 @@ module.exports = {
         });
     },
     logout: async (req, res) => {
-
         /*
             #swagger.tags = ["Authentication"]
             #swagger.summary = "simpleToken: Logout"
             #swagger.description = 'Delete token key.'
         */
+        const auth = req.headers?.authorization // "Token token"
+        const tokenKey = auth ? auth.split(" ") : null // [Token, tokenKey]
+        // const result = await Token.deleteOne({token: tokenKey[1]}) // Bu kısmı simple token silme işleminin içine aldık
+        
+        // Simple token için silme işlemi
+        if (tokenKey[0] === "Token") {
+            const result = await Token.deleteOne({token: tokenKey[1]})
+            res.send({
+                error: false,
+                message: "Token deleted!",
+                result
+            })
+            // JWT için silme işlemi
+        } else if (tokenKey[0] === "Bearer") { // süreli olduğu ve expire'a göre silindiği için yapılabilecek birşey yok, gerek yok.
+            res.send({
+                error: false,
+                message: "JWT: No need any process for logout. Yo can delete tokens!"
+            })
+        }
+            // Bu kısmı simple token silme işleminin içine aldık
+        // res.status(result.deletedCount ? 204 : 404).send({
+        //     error: !(result.deletedCount),
+        //     message: "Token deleted.Logout success!",
+        //     result
+        // })
+    },
 
-        const auth = req.headers?.auhtorization
 
-        const tokenKey = auth ? auth.split(" ") : null
+    refresh: async (req, res) => {
+        /*
+            #swagger.tags = ["Authentication"]
+            #swagger.summary = "Refresh"
+            #swagger.description = 'Refresh with refreshToken for get accessToken'
+            #swagger.parameters["body"] = {
+                in: "body",
+                required: true,
+                schema: {
+                    "bearer": {
+                        refresh: '...refresh_token...'
+                    }
+                }
+            }
+        */
 
-        const result = await Token.deleteOne({token: tokenKey[1]})
+        const refreshToken = req.body?.bearer?.refresh // icinde _id ve password var //* login'den veriyoruz
 
-        res.status(200).send({
-            error:false,
-            message: "Logout Successfull, token deleted.",
-            result
+        if (!refreshToken) {
+            res.errorStatusCode = 401
+            throw new Error('Please enter bearer.refresh')
+        }
+
+        const refreshData = await jwt.verify(refreshToken, process.env.REFRESH_KEY) // üçüncü değişkeni dışarda da kullanacağımız için burada yazamıyoruz. Bunun için alttaki if'i yazıyoruz. Hata aldığında refreshData boş dönecek ve aşağıdakine göre hata göndermiş olacağız
+
+        if (!refreshData) {
+            res.errorStatusCode = 401
+            throw new Error('JWT refresh Token is wrong.')
+        }
+
+        const user = await User.findOne({ _id: refreshData._id })
+
+        if (!(user && user.password == refreshData.password)) {
+            res.errorStatusCode = 401
+            throw new Error('Wrong id or password.')
+        }
+
+        if (!user.isActive) {
+            res.errorStatusCode = 401
+            throw new Error("This account is not active.")
+        }
+
+        res.status(200).send({ // yenilenmiş refresh olmuş access token'ı oluşturmuş oluyoruz
+            error: false,
+            bearer: {
+                access: jwt.sign(user.toJSON(), process.env.ACCESS_KEY, { expiresIn: '30m' }) // (içine saklayacağımız bilgiler (şifrelemek istediğimiz data), şifrelediğimiz accessKey, ve expire süresi) sign methodunun değişkenleri // içine göndereceğimiz data'yı yani user'ı(database'den gönderiyoruz) direk gönderemiyor hata veriyor bunu json'a çevirmemizi istiyor
+            }
         })
     },
 }
